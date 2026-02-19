@@ -1,0 +1,11 @@
+source "https://rubygems.org"
+
+gem "dotenv", "~> 3.1"
+gem "google-apis-gmail_v1", "~> 0.39"
+gem "google-apis-calendar_v3", "~> 0.44"
+gem "google-apis-tasks_v1", "~> 0.15"
+gem "google-apis-drive_v3", "~> 0.50"
+gem "google-apis-people_v1", "~> 0.40"
+gem "google-apis-forms_v1", "~> 0.19"
+gem "googleauth", "~> 1.11"
+gem "mail", "~> 2.8"
