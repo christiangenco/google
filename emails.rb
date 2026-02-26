@@ -335,8 +335,17 @@ class GmailCLI
   end
 
   def decode_attachment(data)
-    padded = data + '=' * ((4 - data.length % 4) % 4)
-    Base64.urlsafe_decode64(padded)
+    # The Google API Ruby client may return already-decoded binary data
+    # or base64url-encoded strings depending on the version
+    if data.encoding == Encoding::ASCII_8BIT || data.bytes.any? { |b| b > 127 }
+      data
+    else
+      padded = data + '=' * ((4 - data.length % 4) % 4)
+      Base64.urlsafe_decode64(padded)
+    end
+  rescue ArgumentError
+    # If base64 decode fails, assume it's already raw binary
+    data
   end
 
   # ── Batch fetching ──
@@ -400,10 +409,10 @@ class GmailCLI
   def modify_labels(options, add: nil, remove: nil)
     error('Missing --id', 'USAGE') unless options[:id]
 
-    mod = Google::Apis::GmailV1::ModifyMessageRequest.new(
-      add_label_ids: add,
-      remove_label_ids: remove
-    )
+    params = {}
+    params[:add_label_ids] = add if add
+    params[:remove_label_ids] = remove if remove
+    mod = Google::Apis::GmailV1::ModifyMessageRequest.new(**params)
     result = @gmail.modify_message('me', options[:id], mod)
     success(id: result.id, labels: result.label_ids)
   end
