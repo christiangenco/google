@@ -53,7 +53,11 @@ class CalendarCLI
 
   # ── Helpers ──
 
-  def extract_event(event)
+  def extract_event(event, verbose: false)
+    desc = event.description
+    unless verbose
+      desc = truncate_description(desc)
+    end
     result = {
       id: event.id,
       summary: event.summary,
@@ -61,7 +65,7 @@ class CalendarCLI
       end: event.end&.date_time&.to_s || event.end&.date,
       status: event.status,
       location: event.location,
-      description: event.description,
+      description: desc,
       attendees: (event.attendees || []).map { |a| { email: a.email, response: a.response_status } },
       organizer: event.organizer ? { email: event.organizer.email, self: event.organizer.self? } : nil,
       html_link: event.html_link,
@@ -70,6 +74,15 @@ class CalendarCLI
       conference: extract_conference(event)
     }.compact
     result
+  end
+
+  def truncate_description(desc)
+    return desc if desc.nil?
+    # Strip long meeting URLs and truncate to 200 chars
+    cleaned = desc.gsub(/https?:\/\/teams\.microsoft\.com\/\S+/, '[Teams link]')
+                  .gsub(/https?:\/\/meet\.google\.com\/\S+/, '[Meet link]')
+                  .gsub(/https?:\/\/zoom\.us\/\S+/, '[Zoom link]')
+    cleaned.length > 200 ? cleaned[0..197] + '...' : cleaned
   end
 
   def extract_reminders(event)
@@ -111,6 +124,7 @@ class CalendarCLI
     time_min = options[:from] ? Time.parse(options[:from]).iso8601 : Time.now.iso8601
     time_max = options[:to] ? Time.parse(options[:to]).iso8601 : (Time.now + 7 * 24 * 3600).iso8601
     limit = options[:limit] || 20
+    verbose = options[:verbose] || false
 
     list_opts = {
       time_min: time_min,
@@ -124,16 +138,20 @@ class CalendarCLI
 
     result = @calendar.list_events(cal_id, **list_opts)
 
-    events = (result.items || []).map { |e| extract_event(e) }
-    success(events: events, next_page_token: result.next_page_token)
+    events = (result.items || []).map { |e| extract_event(e, verbose: verbose) }
+    data = { events: events }
+    # Only include next_page_token if --page-token was used or there's pagination
+    data[:next_page_token] = result.next_page_token if options[:page_token] || verbose
+    success(data)
   end
 
   def get(options)
     error('Missing --id', 'USAGE') unless options[:id]
 
     cal_id = options[:calendar_id] || 'primary'
+    verbose = options[:verbose] || false
     event = @calendar.get_event(cal_id, options[:id])
-    success(extract_event(event))
+    success(extract_event(event, verbose: verbose))
   end
 
   def create(options)
@@ -281,14 +299,16 @@ begin
       [:to, '--to DATETIME', nil],
       [:q, '--q QUERY', nil],
       [:limit, '--limit N', Integer],
-      [:page_token, '--page-token TOKEN', nil]
+      [:page_token, '--page-token TOKEN', nil],
+      [:verbose, '--verbose', nil]
     )
     cli.list(options)
 
   when 'get'
     options = parse_options(
       CALENDAR_ID_OPT,
-      [:id, '--id ID', nil]
+      [:id, '--id ID', nil],
+      [:verbose, '--verbose', nil]
     )
     cli.get(options)
 

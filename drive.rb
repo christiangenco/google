@@ -150,7 +150,10 @@ class DriveCLI
 
     result = @drive.list_files(**list_opts)
     files = (result.files || []).map { |f| extract_file(f) }
-    success(files: files, next_page_token: result.next_page_token)
+    data = { files: files }
+    data[:next_page_token] = result.next_page_token if options[:page_token] && result.next_page_token
+    data[:has_more] = true if !options[:page_token] && result.next_page_token
+    success(data)
   end
 
   def search(options)
@@ -168,7 +171,10 @@ class DriveCLI
 
     result = @drive.list_files(**list_opts)
     files = (result.files || []).map { |f| extract_file(f) }
-    success(files: files, next_page_token: result.next_page_token)
+    data = { files: files }
+    data[:next_page_token] = result.next_page_token if options[:page_token] && result.next_page_token
+    data[:has_more] = true if !options[:page_token] && result.next_page_token
+    success(data)
   end
 
   def folders(options)
@@ -183,7 +189,10 @@ class DriveCLI
 
     result = @drive.list_files(**list_opts)
     folders = (result.files || []).map { |f| extract_file(f) }
-    success(folders: folders, next_page_token: result.next_page_token)
+    data = { folders: folders }
+    data[:next_page_token] = result.next_page_token if options[:page_token] && result.next_page_token
+    data[:has_more] = true if !options[:page_token] && result.next_page_token
+    success(data)
   end
 
   def get(options)
