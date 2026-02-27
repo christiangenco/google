@@ -1,11 +1,15 @@
-# google
+# google-cli
 
-Ruby CLIs for Gmail, Calendar, Drive, Tasks. All output JSON. Run from `~/tools/google`.
+Ruby CLIs for Gmail, Calendar, Drive, Tasks. All output JSON.
 
-## emails.rb
+```bash
+google-cli <emails|calendar|drive|tasks> <command> [options]
+```
+
+## emails
 
 ```
-bundle exec ruby emails.rb <command> [options]
+google-cli emails <command> [options]
 
 list       [--label LABEL] [--q QUERY] [--limit N] [--page-token TOKEN]
 starred    [--limit N] [--page-token TOKEN]
@@ -30,18 +34,18 @@ labels     [--list] [--create NAME]
 ```
 
 ```bash
-bundle exec ruby emails.rb list --limit 10
-bundle exec ruby emails.rb list --q "from:alice is:unread"
-bundle exec ruby emails.rb get --id 18f1a2b3c4d5e6f7
-bundle exec ruby emails.rb send --to "bob@x.com" --subject "Hi" --text "Hello"
-bundle exec ruby emails.rb reply --id 18f1a2b3c4d5e6f7 --text "Thanks"
-bundle exec ruby emails.rb archive --id 18f1a2b3c4d5e6f7
+google-cli emails list --limit 10
+google-cli emails list --q "from:alice is:unread"
+google-cli emails get --id 18f1a2b3c4d5e6f7
+google-cli emails send --to "bob@x.com" --subject "Hi" --text "Hello"
+google-cli emails reply --id 18f1a2b3c4d5e6f7 --text "Thanks"
+google-cli emails archive --id 18f1a2b3c4d5e6f7
 ```
 
-## calendar.rb
+## calendar
 
 ```
-bundle exec ruby calendar.rb <command> [options]
+google-cli calendar <command> [options]
 
 list       [--from DATETIME] [--to DATETIME] [--q QUERY] [--limit N] [--calendar-id ID] [--page-token TOKEN]
 search     (alias for list --q)
@@ -55,17 +59,17 @@ quick-add  --text TEXT [--calendar-id ID]
 ```
 
 ```bash
-bundle exec ruby calendar.rb list
-bundle exec ruby calendar.rb list --from "2025-03-01" --to "2025-03-31"
-bundle exec ruby calendar.rb create --summary "Standup" --start "2025-03-15T09:00:00" --end "2025-03-15T09:30:00"
-bundle exec ruby calendar.rb quick-add --text "Dentist Friday 2pm"
-bundle exec ruby calendar.rb freebusy --from "2025-03-15T00:00:00" --to "2025-03-16T00:00:00"
+google-cli calendar list
+google-cli calendar list --from "2025-03-01" --to "2025-03-31"
+google-cli calendar create --summary "Standup" --start "2025-03-15T09:00:00" --end "2025-03-15T09:30:00"
+google-cli calendar quick-add --text "Dentist Friday 2pm"
+google-cli calendar freebusy --from "2025-03-15T00:00:00" --to "2025-03-16T00:00:00"
 ```
 
-## drive.rb
+## drive
 
 ```
-bundle exec ruby drive.rb <command> [options]
+google-cli drive <command> [options]
 
 list        [--q QUERY] [--limit N] [--folder-id ID] [--page-token TOKEN]
 search      --q QUERY [--limit N] [--page-token TOKEN]
@@ -87,17 +91,17 @@ permissions --id ID
 Export formats: `txt`, `pdf`, `docx`, `html`, `csv`, `xlsx`, `pptx`
 
 ```bash
-bundle exec ruby drive.rb list --limit 10
-bundle exec ruby drive.rb search --q "quarterly report"
-bundle exec ruby drive.rb download --id FILE_ID --export-format pdf --output report.pdf
-bundle exec ruby drive.rb upload --path ./doc.pdf --folder-id FOLDER_ID
-bundle exec ruby drive.rb share --id FILE_ID --email "bob@x.com" --role writer
+google-cli drive list --limit 10
+google-cli drive search --q "quarterly report"
+google-cli drive download --id FILE_ID --export-format pdf --output report.pdf
+google-cli drive upload --path ./doc.pdf --folder-id FOLDER_ID
+google-cli drive share --id FILE_ID --email "bob@x.com" --role writer
 ```
 
-## tasks.rb
+## tasks
 
 ```
-bundle exec ruby tasks.rb <command> [options]
+google-cli tasks <command> [options]
 
 lists
 list       [--list-id ID] [--show-completed] [--limit N]
@@ -109,10 +113,10 @@ delete     --id ID [--list-id ID]
 ```
 
 ```bash
-bundle exec ruby tasks.rb lists
-bundle exec ruby tasks.rb list --show-completed
-bundle exec ruby tasks.rb create --title "Buy milk" --due "2025-03-15"
-bundle exec ruby tasks.rb complete --id TASK_ID
+google-cli tasks lists
+google-cli tasks list --show-completed
+google-cli tasks create --title "Buy milk" --due "2025-03-15"
+google-cli tasks complete --id TASK_ID
 ```
 
 ## Auth
