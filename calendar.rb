@@ -287,12 +287,31 @@ end
 
 CALENDAR_ID_OPT = [:calendar_id, '--calendar-id ID', nil].freeze
 
+def check_help(usage_text)
+  if ARGV.include?('--help') || ARGV.include?('-h')
+    puts usage_text
+    exit 0
+  end
+end
+
 begin
   cli = CalendarCLI.new
   command = ARGV.shift
 
   case command
   when 'list', 'search'
+    check_help(<<~HELP)
+      Usage: google-cli calendar list [options]
+        List events (alias: search)
+        --calendar-id ID   Calendar ID (default: primary)
+        --from DATETIME    Start time (default: now)
+        --to DATETIME      End time (default: +7 days)
+        --q QUERY          Text search query
+        --limit N          Max results (default: 20)
+        --page-token TOKEN Pagination token
+        --verbose          Show full descriptions and pagination
+      Example: google-cli calendar list --from "2025-01-01" --to "2025-01-31"
+    HELP
     options = parse_options(
       CALENDAR_ID_OPT,
       [:from, '--from DATETIME', nil],
@@ -305,6 +324,13 @@ begin
     cli.list(options)
 
   when 'get'
+    check_help(<<~HELP)
+      Usage: google-cli calendar get --id EVENT_ID [options]
+        Get a single event
+        --id ID              Event ID (required)
+        --calendar-id ID     Calendar ID (default: primary)
+        --verbose            Show full description
+    HELP
     options = parse_options(
       CALENDAR_ID_OPT,
       [:id, '--id ID', nil],
@@ -313,6 +339,19 @@ begin
     cli.get(options)
 
   when 'create'
+    check_help(<<~HELP)
+      Usage: google-cli calendar create --summary TITLE --start DATETIME --end DATETIME [options]
+        Create a calendar event
+        --summary TITLE       Event title (required)
+        --start DATETIME      Start time ISO8601 (required)
+        --end DATETIME        End time ISO8601 (required)
+        --description DESC    Event description
+        --location LOC        Event location
+        --attendees EMAILS    Comma-separated attendee emails
+        --all-day             Create all-day event (use date format YYYY-MM-DD)
+        --calendar-id ID      Calendar ID (default: primary)
+      Example: google-cli calendar create --summary "Meeting" --start "2025-01-15T10:00:00" --end "2025-01-15T11:00:00"
+    HELP
     options = parse_options(
       CALENDAR_ID_OPT,
       [:summary, '--summary TITLE', nil],
@@ -326,6 +365,19 @@ begin
     cli.create(options)
 
   when 'update'
+    check_help(<<~HELP)
+      Usage: google-cli calendar update --id EVENT_ID [options]
+        Update an existing event
+        --id ID               Event ID (required)
+        --summary TITLE       New title
+        --start DATETIME      New start time
+        --end DATETIME        New end time
+        --description DESC    New description
+        --location LOC        New location
+        --attendees EMAILS    New attendee list (comma-separated)
+        --all-day             Use date format for start/end
+        --calendar-id ID      Calendar ID (default: primary)
+    HELP
     options = parse_options(
       CALENDAR_ID_OPT,
       [:id, '--id ID', nil],
@@ -340,6 +392,12 @@ begin
     cli.update(options)
 
   when 'delete'
+    check_help(<<~HELP)
+      Usage: google-cli calendar delete --id EVENT_ID [options]
+        Delete an event
+        --id ID              Event ID (required)
+        --calendar-id ID     Calendar ID (default: primary)
+    HELP
     options = parse_options(
       CALENDAR_ID_OPT,
       [:id, '--id ID', nil]
@@ -347,10 +405,18 @@ begin
     cli.delete(options)
 
   when 'calendars'
+    check_help("Usage: google-cli calendar calendars\n  List all calendars")
     options = parse_options()
     cli.calendars(options)
 
   when 'freebusy'
+    check_help(<<~HELP)
+      Usage: google-cli calendar freebusy --from DATETIME --to DATETIME [options]
+        Check availability / free-busy info
+        --from DATETIME      Start time (required)
+        --to DATETIME        End time (required)
+        --calendars IDS      Comma-separated calendar IDs (default: primary)
+    HELP
     options = parse_options(
       [:from, '--from DATETIME', nil],
       [:to, '--to DATETIME', nil],
@@ -359,11 +425,36 @@ begin
     cli.freebusy(options)
 
   when 'quick-add'
+    check_help(<<~HELP)
+      Usage: google-cli calendar quick-add --text "Lunch with Bob tomorrow at noon"
+        Create event from natural language
+        --text TEXT          Event description in natural language (required)
+        --calendar-id ID     Calendar ID (default: primary)
+    HELP
     options = parse_options(
       CALENDAR_ID_OPT,
       [:text, '--text TEXT', nil]
     )
     cli.quick_add(options)
+
+  when '--help', '-h', 'help', nil
+    puts <<~HELP
+      google-cli calendar - Google Calendar CLI
+
+      Commands:
+        list        List events (--from, --to, --q, --limit)
+        get         Get single event (--id)
+        create      Create event (--summary, --start, --end)
+        update      Update event (--id, plus fields to change)
+        delete      Delete event (--id)
+        search      Alias for list --q
+        calendars   List all calendars
+        freebusy    Check availability (--from, --to)
+        quick-add   Natural language event creation (--text)
+
+      Run: google-cli calendar <command> --help for details
+    HELP
+    exit 0
 
   else
     cli.error("Unknown command: #{command}", 'USAGE',

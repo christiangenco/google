@@ -480,12 +480,28 @@ def parse_options(*specs)
   options
 end
 
+def check_help(usage_text)
+  if ARGV.include?('--help') || ARGV.include?('-h')
+    puts usage_text
+    exit 0
+  end
+end
+
 begin
   cli = GmailCLI.new
   command = ARGV.shift
 
   case command
   when 'list', 'search'
+    check_help(<<~HELP)
+      Usage: google-cli emails list [options]
+        List inbox messages (alias: search)
+        --label LABEL        Filter by label (default: INBOX)
+        --q QUERY            Gmail search query
+        --limit N            Max results (default: 20)
+        --page-token TOKEN   Pagination token
+      Example: google-cli emails list --q "from:github" --limit 5
+    HELP
     options = parse_options(
       [:label, '--label LABEL', nil],
       [:q, '--q QUERY', nil],
@@ -495,6 +511,12 @@ begin
     cli.list(options)
 
   when 'starred'
+    check_help(<<~HELP)
+      Usage: google-cli emails starred [options]
+        List starred messages
+        --limit N            Max results (default: 20)
+        --page-token TOKEN   Pagination token
+    HELP
     options = parse_options(
       [:limit, '--limit N', Integer],
       [:page_token, '--page-token TOKEN', nil]
@@ -502,14 +524,31 @@ begin
     cli.starred(options)
 
   when 'get'
+    check_help(<<~HELP)
+      Usage: google-cli emails get --id MESSAGE_ID
+        Get full message content
+        --id ID    Message ID (required)
+    HELP
     options = parse_options([:id, '--id ID', nil])
     cli.get(options)
 
   when 'thread'
+    check_help(<<~HELP)
+      Usage: google-cli emails thread --id THREAD_ID
+        Get all messages in a thread
+        --id ID    Thread ID (required)
+    HELP
     options = parse_options([:id, '--id ID', nil])
     cli.thread(options)
 
   when 'attachment'
+    check_help(<<~HELP)
+      Usage: google-cli emails attachment --message-id ID --attachment-id ID [--output PATH]
+        Download an email attachment
+        --message-id ID      Message ID (required)
+        --attachment-id ID   Attachment ID (required)
+        --output PATH        Save to file path
+    HELP
     options = parse_options(
       [:message_id, '--message-id ID', nil],
       [:attachment_id, '--attachment-id ID', nil],
@@ -518,6 +557,17 @@ begin
     cli.attachment(options)
 
   when 'send'
+    check_help(<<~HELP)
+      Usage: google-cli emails send --to ADDR --subject SUBJ [options]
+        Send an email
+        --to ADDR        Recipient (required)
+        --subject SUBJ   Subject line (required)
+        --text TEXT       Plain text body
+        --html HTML       HTML body
+        --cc CC           CC recipients
+        --bcc BCC         BCC recipients
+      Example: google-cli emails send --to "bob@example.com" --subject "Hello" --text "Hi"
+    HELP
     options = parse_options(
       [:to, '--to ADDR', nil],
       [:subject, '--subject SUBJ', nil],
@@ -529,6 +579,13 @@ begin
     cli.send_email(options)
 
   when 'reply'
+    check_help(<<~HELP)
+      Usage: google-cli emails reply --id MESSAGE_ID [options]
+        Reply to a message
+        --id ID        Message ID to reply to (required)
+        --text TEXT    Plain text body
+        --html HTML    HTML body
+    HELP
     options = parse_options(
       [:id, '--id ID', nil],
       [:text, '--text TEXT', nil],
@@ -537,6 +594,17 @@ begin
     cli.reply(options)
 
   when 'draft'
+    check_help(<<~HELP)
+      Usage: google-cli emails draft [options]
+        Create a draft reply (--id) or new draft (--to --subject)
+        --id ID          Message ID to reply to (for reply drafts)
+        --to ADDR        Recipient (for new drafts)
+        --subject SUBJ   Subject (for new drafts)
+        --text TEXT       Plain text body
+        --html HTML       HTML body
+        --cc CC           CC recipients
+        --bcc BCC         BCC recipients
+    HELP
     options = parse_options(
       [:id, '--id ID', nil],
       [:to, '--to ADDR', nil],
@@ -551,13 +619,31 @@ begin
   when 'drafts'
     subcommand = ARGV.shift
     case subcommand
+    when '--help', '-h'
+      puts <<~HELP
+        Usage: google-cli emails drafts <list|send> [options]
+          Manage drafts
+          Subcommands: list, send
+      HELP
+      exit 0
     when 'list'
+      check_help(<<~HELP)
+        Usage: google-cli emails drafts list [options]
+          List drafts
+          --limit N            Max results (default: 20)
+          --page-token TOKEN   Pagination token
+      HELP
       options = parse_options(
         [:limit, '--limit N', Integer],
         [:page_token, '--page-token TOKEN', nil]
       )
       cli.drafts_list(options)
     when 'send'
+      check_help(<<~HELP)
+        Usage: google-cli emails drafts send --id DRAFT_ID
+          Send an existing draft
+          --id ID    Draft ID (required)
+      HELP
       options = parse_options([:id, '--id ID', nil])
       cli.drafts_send(options)
     else
@@ -565,39 +651,84 @@ begin
     end
 
   when 'delete-draft'
+    check_help(<<~HELP)
+      Usage: google-cli emails delete-draft --id DRAFT_ID
+        Delete a draft
+        --id ID    Draft ID (required)
+    HELP
     options = parse_options([:id, '--id ID', nil])
     cli.delete_draft(options)
 
   when 'star'
+    check_help("Usage: google-cli emails star --id MESSAGE_ID\n  Star a message\n  --id ID    Message ID (required)")
     options = parse_options([:id, '--id ID', nil])
     cli.star(options)
 
   when 'unstar'
+    check_help("Usage: google-cli emails unstar --id MESSAGE_ID\n  Unstar a message\n  --id ID    Message ID (required)")
     options = parse_options([:id, '--id ID', nil])
     cli.unstar(options)
 
   when 'read'
+    check_help("Usage: google-cli emails read --id MESSAGE_ID\n  Mark a message as read\n  --id ID    Message ID (required)")
     options = parse_options([:id, '--id ID', nil])
     cli.mark_read(options)
 
   when 'unread'
+    check_help("Usage: google-cli emails unread --id MESSAGE_ID\n  Mark a message as unread\n  --id ID    Message ID (required)")
     options = parse_options([:id, '--id ID', nil])
     cli.mark_unread(options)
 
   when 'archive'
+    check_help("Usage: google-cli emails archive --id MESSAGE_ID\n  Archive a message (remove from INBOX)\n  --id ID    Message ID (required)")
     options = parse_options([:id, '--id ID', nil])
     cli.archive(options)
 
   when 'trash'
+    check_help("Usage: google-cli emails trash --id MESSAGE_ID\n  Move a message to trash\n  --id ID    Message ID (required)")
     options = parse_options([:id, '--id ID', nil])
     cli.trash(options)
 
   when 'labels'
+    check_help(<<~HELP)
+      Usage: google-cli emails labels [--list] [--create NAME]
+        List or create labels
+        --list       List all labels (default)
+        --create NAME   Create a new label
+    HELP
     options = parse_options(
       [:list, '--list', nil],
       [:create, '--create NAME', nil]
     )
     cli.labels(options)
+
+  when '--help', '-h', 'help', nil
+    puts <<~HELP
+      google-cli emails - Gmail CLI
+
+      Commands:
+        list         List messages (--label, --q, --limit, --page-token)
+        starred      List starred messages (--limit, --page-token)
+        get          Get full message (--id)
+        thread       Get all messages in a thread (--id)
+        send         Send email (--to, --subject, --text, --html, --cc, --bcc)
+        reply        Reply to message (--id, --text, --html)
+        draft        Create draft (--id for reply, or --to --subject for new)
+        drafts       Manage drafts (list, send)
+        delete-draft Delete a draft (--id)
+        star         Star message (--id)
+        unstar       Unstar message (--id)
+        read         Mark as read (--id)
+        unread       Mark as unread (--id)
+        archive      Archive message (--id)
+        trash        Trash message (--id)
+        attachment   Download attachment (--message-id, --attachment-id, --output)
+        labels       List/create labels (--list, --create)
+        search       Alias for list --q
+
+      Run: google-cli emails <command> --help for details
+    HELP
+    exit 0
 
   else
     cli.error("Unknown command: #{command}", 'USAGE',

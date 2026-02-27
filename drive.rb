@@ -398,12 +398,27 @@ LIMIT_OPT = [:limit, '--limit N', Integer].freeze
 PAGE_TOKEN_OPT = [:page_token, '--page-token TOKEN', nil].freeze
 NAME_OPT = [:name, '--name NAME', nil].freeze
 
+def check_help(usage_text)
+  if ARGV.include?('--help') || ARGV.include?('-h')
+    puts usage_text
+    exit 0
+  end
+end
+
 begin
   cli = DriveCLI.new
   command = ARGV.shift
 
   case command
   when 'list'
+    check_help(<<~HELP)
+      Usage: google-cli drive list [options]
+        List files (uses Drive metadata query syntax)
+        --q QUERY            Drive query (e.g., "name contains 'report'")
+        --limit N            Max results (default: 20)
+        --folder-id ID       List files in folder
+        --page-token TOKEN   Pagination token
+    HELP
     options = parse_options(
       [:q, '--q QUERY', nil],
       LIMIT_OPT,
@@ -413,6 +428,13 @@ begin
     cli.list(options)
 
   when 'search'
+    check_help(<<~HELP)
+      Usage: google-cli drive search --q QUERY [options]
+        Full-text content search inside files
+        --q QUERY            Search query (required)
+        --limit N            Max results (default: 20)
+        --page-token TOKEN   Pagination token
+    HELP
     options = parse_options(
       [:q, '--q QUERY', nil],
       LIMIT_OPT,
@@ -421,6 +443,12 @@ begin
     cli.search(options)
 
   when 'folders'
+    check_help(<<~HELP)
+      Usage: google-cli drive folders [options]
+        List folders
+        --limit N            Max results (default: 50)
+        --page-token TOKEN   Pagination token
+    HELP
     options = parse_options(
       LIMIT_OPT,
       PAGE_TOKEN_OPT
@@ -428,10 +456,18 @@ begin
     cli.folders(options)
 
   when 'get'
+    check_help("Usage: google-cli drive get --id FILE_ID\n  Get file metadata\n  --id ID    File ID (required)")
     options = parse_options(ID_OPT)
     cli.get(options)
 
   when 'download'
+    check_help(<<~HELP)
+      Usage: google-cli drive download --id FILE_ID [options]
+        Download file content
+        --id ID                File ID (required)
+        --output PATH          Save to file path
+        --export-format FMT    Export format for Google Docs (txt, pdf, docx, html, csv, xlsx, pptx)
+    HELP
     options = parse_options(
       ID_OPT,
       [:output, '--output PATH', nil],
@@ -440,6 +476,14 @@ begin
     cli.download(options)
 
   when 'upload'
+    check_help(<<~HELP)
+      Usage: google-cli drive upload --path FILE [options]
+        Upload a file
+        --path PATH          Local file path (required)
+        --name NAME          File name in Drive (default: basename)
+        --folder-id ID       Upload to folder
+        --mime-type TYPE     MIME type
+    HELP
     options = parse_options(
       [:path, '--path PATH', nil],
       NAME_OPT,
@@ -449,6 +493,13 @@ begin
     cli.upload(options)
 
   when 'create'
+    check_help(<<~HELP)
+      Usage: google-cli drive create --name NAME [options]
+        Create an empty file/doc
+        --name NAME          File name (required)
+        --folder-id ID       Parent folder
+        --mime-type TYPE     MIME type (default: Google Doc)
+    HELP
     options = parse_options(
       NAME_OPT,
       FOLDER_ID_OPT,
@@ -457,6 +508,12 @@ begin
     cli.create(options)
 
   when 'mkdir'
+    check_help(<<~HELP)
+      Usage: google-cli drive mkdir --name NAME [--folder-id ID]
+        Create a folder
+        --name NAME          Folder name (required)
+        --folder-id ID       Parent folder
+    HELP
     options = parse_options(
       NAME_OPT,
       FOLDER_ID_OPT
@@ -464,6 +521,13 @@ begin
     cli.mkdir(options)
 
   when 'update'
+    check_help(<<~HELP)
+      Usage: google-cli drive update --id FILE_ID [options]
+        Update file metadata
+        --id ID              File ID (required)
+        --name NAME          New file name
+        --description DESC   New description
+    HELP
     options = parse_options(
       ID_OPT,
       NAME_OPT,
@@ -472,10 +536,18 @@ begin
     cli.update(options)
 
   when 'delete'
+    check_help("Usage: google-cli drive delete --id FILE_ID\n  Delete a file\n  --id ID    File ID (required)")
     options = parse_options(ID_OPT)
     cli.delete(options)
 
   when 'copy'
+    check_help(<<~HELP)
+      Usage: google-cli drive copy --id FILE_ID [options]
+        Copy a file
+        --id ID              File ID (required)
+        --name NAME          New file name
+        --folder-id ID       Destination folder
+    HELP
     options = parse_options(
       ID_OPT,
       NAME_OPT,
@@ -484,6 +556,12 @@ begin
     cli.copy(options)
 
   when 'move'
+    check_help(<<~HELP)
+      Usage: google-cli drive move --id FILE_ID --folder-id FOLDER_ID
+        Move a file to a different folder
+        --id ID              File ID (required)
+        --folder-id ID       Destination folder (required)
+    HELP
     options = parse_options(
       ID_OPT,
       FOLDER_ID_OPT
@@ -491,6 +569,14 @@ begin
     cli.move(options)
 
   when 'share'
+    check_help(<<~HELP)
+      Usage: google-cli drive share --id FILE_ID [--email ADDR | --anyone] [options]
+        Share a file
+        --id ID              File ID (required)
+        --email ADDR         Share with specific user
+        --anyone             Share with anyone (public link)
+        --role ROLE          Permission role (reader, writer, commenter; default: reader)
+    HELP
     options = parse_options(
       ID_OPT,
       [:email, '--email ADDR', nil],
@@ -500,6 +586,12 @@ begin
     cli.share(options)
 
   when 'unshare'
+    check_help(<<~HELP)
+      Usage: google-cli drive unshare --id FILE_ID --permission-id PID
+        Remove a sharing permission
+        --id ID              File ID (required)
+        --permission-id PID  Permission ID (required)
+    HELP
     options = parse_options(
       ID_OPT,
       [:permission_id, '--permission-id PID', nil]
@@ -507,8 +599,34 @@ begin
     cli.unshare(options)
 
   when 'permissions'
+    check_help("Usage: google-cli drive permissions --id FILE_ID\n  List file permissions\n  --id ID    File ID (required)")
     options = parse_options(ID_OPT)
     cli.permissions(options)
+
+  when '--help', '-h', 'help', nil
+    puts <<~HELP
+      google-cli drive - Google Drive CLI
+
+      Commands:
+        list          List files (--q, --limit, --folder-id)
+        search        Full-text content search (--q)
+        folders       List folders (--limit)
+        get           Get file metadata (--id)
+        download      Download file (--id, --output, --export-format)
+        upload        Upload file (--path, --name, --folder-id)
+        create        Create empty file/doc (--name, --mime-type)
+        mkdir         Create folder (--name)
+        update        Update metadata (--id, --name)
+        delete        Delete file (--id)
+        copy          Copy file (--id, --name, --folder-id)
+        move          Move file (--id, --folder-id)
+        share         Share file (--id, --email/--anyone, --role)
+        unshare       Remove sharing (--id, --permission-id)
+        permissions   List permissions (--id)
+
+      Run: google-cli drive <command> --help for details
+    HELP
+    exit 0
 
   else
     cli.error("Unknown command: #{command}", 'USAGE',

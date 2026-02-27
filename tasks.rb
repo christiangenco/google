@@ -68,6 +68,13 @@ def extract_task_list(list)
   }
 end
 
+def check_help(usage_text)
+  if ARGV.include?('--help') || ARGV.include?('-h')
+    puts usage_text
+    exit 0
+  end
+end
+
 begin
   tasks = GoogleClient.tasks_service
   command = ARGV.shift
@@ -75,11 +82,19 @@ begin
 
   case command
   when 'lists'
+    check_help("Usage: google-cli tasks lists\n  List all task lists")
     result = tasks.list_tasklists(max_results: 100)
     lists = (result.items || []).map { |l| extract_task_list(l) }
     success(lists: lists)
 
   when 'list'
+    check_help(<<~HELP)
+      Usage: google-cli tasks list [options]
+        List tasks in a list
+        --list-id ID         Task list ID (default: @default)
+        --show-completed     Include completed tasks
+        --limit N            Max results (default: 100)
+    HELP
     OptionParser.new do |opts|
       opts.on('--list-id ID') { |v| options[:list_id] = v }
       opts.on('--show-completed') { options[:show_completed] = true }
@@ -99,6 +114,12 @@ begin
     success(tasks: items)
 
   when 'get'
+    check_help(<<~HELP)
+      Usage: google-cli tasks get --id TASK_ID [--list-id ID]
+        Get a single task
+        --id ID          Task ID (required)
+        --list-id ID     Task list ID (default: @default)
+    HELP
     OptionParser.new do |opts|
       opts.on('--list-id ID') { |v| options[:list_id] = v }
       opts.on('--id ID') { |v| options[:id] = v }
@@ -111,6 +132,15 @@ begin
     success(extract_task(task))
 
   when 'create'
+    check_help(<<~HELP)
+      Usage: google-cli tasks create --title TITLE [options]
+        Create a task
+        --title TITLE    Task title (required)
+        --notes NOTES    Task notes
+        --due DATE       Due date (ISO8601, e.g., 2025-01-15)
+        --parent ID      Parent task ID (for subtasks)
+        --list-id ID     Task list ID (default: @default)
+    HELP
     OptionParser.new do |opts|
       opts.on('--list-id ID') { |v| options[:list_id] = v }
       opts.on('--title TITLE') { |v| options[:title] = v }
@@ -133,6 +163,16 @@ begin
     success(extract_task(result))
 
   when 'update'
+    check_help(<<~HELP)
+      Usage: google-cli tasks update --id TASK_ID [options]
+        Update a task
+        --id ID          Task ID (required)
+        --title TITLE    New title
+        --notes NOTES    New notes
+        --due DATE       New due date
+        --status STATUS  New status (needsAction, completed)
+        --list-id ID     Task list ID (default: @default)
+    HELP
     OptionParser.new do |opts|
       opts.on('--list-id ID') { |v| options[:list_id] = v }
       opts.on('--id ID') { |v| options[:id] = v }
@@ -156,6 +196,12 @@ begin
     success(extract_task(result))
 
   when 'complete'
+    check_help(<<~HELP)
+      Usage: google-cli tasks complete --id TASK_ID [--list-id ID]
+        Mark a task as complete
+        --id ID          Task ID (required)
+        --list-id ID     Task list ID (default: @default)
+    HELP
     OptionParser.new do |opts|
       opts.on('--list-id ID') { |v| options[:list_id] = v }
       opts.on('--id ID') { |v| options[:id] = v }
@@ -171,6 +217,12 @@ begin
     success(extract_task(result))
 
   when 'delete'
+    check_help(<<~HELP)
+      Usage: google-cli tasks delete --id TASK_ID [--list-id ID]
+        Delete a task
+        --id ID          Task ID (required)
+        --list-id ID     Task list ID (default: @default)
+    HELP
     OptionParser.new do |opts|
       opts.on('--list-id ID') { |v| options[:list_id] = v }
       opts.on('--id ID') { |v| options[:id] = v }
@@ -181,6 +233,23 @@ begin
     list_id = options[:list_id] || '@default'
     tasks.delete_task(list_id, options[:id])
     success(deleted: true, id: options[:id])
+
+  when '--help', '-h', 'help', nil
+    puts <<~HELP
+      google-cli tasks - Google Tasks CLI
+
+      Commands:
+        lists      List task lists
+        list       List tasks (--list-id, --show-completed, --limit)
+        get        Get single task (--list-id, --id)
+        create     Create task (--title, --notes, --due, --list-id)
+        update     Update task (--id, --title, --notes, --due, --status)
+        complete   Mark task complete (--id, --list-id)
+        delete     Delete task (--id, --list-id)
+
+      Run: google-cli tasks <command> --help for details
+    HELP
+    exit 0
 
   else
     error("Unknown command: #{command}", 'USAGE',
